@@ -54,11 +54,19 @@ function init() {
 function createCup() {
     // Create cup geometry
     const cupGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.5, 32);
-    const cupMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+    const cupMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF }); // White cup
     cup = new THREE.Mesh(cupGeometry, cupMaterial);
     cup.position.y = 2.25; // Start at top of stairs
     cup.position.z = -1.6; // Start at top of stairs
     scene.add(cup);
+
+    // Add Starbucks logo
+    const logoMaterial = new THREE.MeshPhongMaterial({ color: 0x006B3C }); // Starbucks green
+    const logoGeometry = new THREE.CircleGeometry(0.1, 32);
+    const logoMesh = new THREE.Mesh(logoGeometry, logoMaterial);
+    logoMesh.position.set(0, 0.25, 0); // Centered vertically
+    logoMesh.rotation.y = Math.PI; // Rotate to face the camera
+    cup.add(logoMesh); // Add logo as a child of the cup
 
     // Physics body for cup
     const cupShape = new CANNON.Cylinder(0.3, 0.3, 0.5, 32);
@@ -74,14 +82,24 @@ function createStairs() {
     const stepHeight = 0.2;
     const stepDepth = 0.4;
     const numSteps = 5;
+    const stepsGroup = new THREE.Group();
+    scene.add(stepsGroup);
 
     for (let i = 0; i < numSteps; i++) {
+        // Create solid step
         const geometry = new THREE.BoxGeometry(2, stepHeight, stepDepth);
         const material = new THREE.MeshPhongMaterial({ color: 0x808080 });
         const step = new THREE.Mesh(geometry, material);
         step.position.y = i * stepHeight;
         step.position.z = -i * stepDepth;
-        scene.add(step);
+        stepsGroup.add(step);
+
+        // Create wireframe for step
+        const wireframe = new THREE.WireframeGeometry(geometry);
+        const line = new THREE.LineSegments(wireframe, new THREE.LineBasicMaterial({ color: 0x000000 }));
+        line.position.y = i * stepHeight;
+        line.position.z = -i * stepDepth;
+        stepsGroup.add(line);
 
         // Physics body for stairs
         const stepShape = new CANNON.Box(new CANNON.Vec3(1, stepHeight/2, stepDepth/2));
@@ -96,7 +114,7 @@ function createStairs() {
 
 function createFluid() {
     const particleGeometry = new THREE.SphereGeometry(0.02, 4, 4);
-    const particleMaterial = new THREE.MeshPhongMaterial({ color: 0x0000FF });
+    const particleMaterial = new THREE.MeshPhongMaterial({ color: 0x654321 }); // Rich coffee brown
 
     for (let i = 0; i < particleCount; i++) {
         const particle = new THREE.Mesh(particleGeometry, particleMaterial);
