@@ -87,29 +87,33 @@ function init() {
 }
 
 function createCup() {
-    // Create cup geometry
-    const cupGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.5, 32);
+    // Create cup geometry (taller and thinner)
+    const cupGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.8, 32);
     const cupMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF }); // White cup
     cup = new THREE.Mesh(cupGeometry, cupMaterial);
-    cup.position.y = 2.25; // Start at top of stairs
-    cup.position.z = -1.6; // Start at top of stairs
+    cup.position.set(0, 2.25, -1.6); // Start at top of stairs
     scene.add(cup);
 
     // Add Starbucks logo
     const logoMaterial = new THREE.MeshPhongMaterial({ color: 0x006B3C }); // Starbucks green
     const logoGeometry = new THREE.CircleGeometry(0.1, 32);
     const logoMesh = new THREE.Mesh(logoGeometry, logoMaterial);
-    logoMesh.position.set(0, 0.25, 0); // Centered vertically
+    logoMesh.position.set(0, 0.4, 0); // Centered vertically on thinner cup
     logoMesh.rotation.y = Math.PI; // Rotate to face the camera
     cup.add(logoMesh); // Add logo as a child of the cup
 
-    // Physics body for cup
-    const cupShape = new CANNON.Cylinder(0.3, 0.3, 0.5, 32);
+    // Create physics body with matching dimensions using Box shape
+    const cupShape = new CANNON.Box(new CANNON.Vec3(0.2, 0.4, 0.2)); // Box dimensions (width, height, depth)
     cupBody = new CANNON.Body({
         mass: cupMass,
         shape: cupShape,
-        position: new CANNON.Vec3(0, 2.25, -1.6) // Start at top of stairs
+        position: new CANNON.Vec3(0, 2.25, -1.6),
+        linearDamping: 0.95,
+        angularDamping: 0.95
     });
+
+    // Adjust position to match cup mesh
+    cupBody.position.set(0, 2.25, -1.6);
     physicsWorld.addBody(cupBody);
 }
 
@@ -156,14 +160,15 @@ function createFluid() {
     });
 
     for (let i = 0; i < particleCount; i++) {
-        // Position particles in a circular pattern at the bottom of the cup
+        // Position particles at the top of the cup
         const angle = Math.random() * Math.PI * 2;
-        const radius = 0.25 * Math.random(); // Slightly smaller than cup radius
+        const radius = 0.18 * Math.random(); // Smaller radius to match cup
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
+        const y = 2.65; // Position at top of cup
         
         const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-        particle.position.set(x, 2.05, z - 1.6);
+        particle.position.set(x, y, z - 1.6);
         scene.add(particle);
         
         const particleShape = new CANNON.Sphere(0.02);
@@ -177,7 +182,7 @@ function createFluid() {
             linearFactor: new CANNON.Vec3(1, 1, 1), // Allow movement in all directions
             angularFactor: new CANNON.Vec3(1, 1, 1) // Allow rotation in all directions
         });
-        particleBody.position.set(x, 2.05, z - 1.6);
+        particleBody.position.set(x, y, z - 1.6); // Use the same y position as the visual particle
         physicsWorld.addBody(particleBody);
         
         fluidParticles.push({
@@ -228,13 +233,14 @@ function resetSimulation() {
 
     // Reset fluid particles
     fluidParticles.forEach(particle => {
-        // Position particles more densely in the cup
+        // Position particles at the very top of the cup
         const angle = Math.random() * Math.PI * 2;
-        const radius = 0.28 * Math.random(); // Slightly smaller than cup radius
+        const radius = 0.18 * Math.random(); // Smaller radius to match cup
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
+        const y = 2.65; // Slightly above cup rim (2.25 base + 0.8 height + 0.05)
         
-        particle.body.position.set(x, 2.05, z - 1.6);
+        particle.body.position.set(x, y, z - 1.6);
         particle.body.velocity.set(0, 0, 0);
         particle.body.angularVelocity.set(0, 0, 0);
     });
